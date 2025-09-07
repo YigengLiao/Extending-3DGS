@@ -13,7 +13,7 @@
 * [Color Estimation](#color-estimation) 
 * [Transmittance Computation](#transmittance-computation) 
 * [Multi-Image-Tile Rendering](#multi-image-tile-rendering) 
- 
+
 --- 
 ## Color Estimation 
  
@@ -23,11 +23,11 @@ Let $v\in\mathbb{R}^3$ be the (normalized) view direction. Let $\Phi_{\text{SH}}
  
 $$ 
 \begin{aligned} 
-f_{\text{in}}(x,v) &= \big[\, \Phi_{\text{SH}}(v)\ \Vert\ \psi(x)\ \Vert\ m \,\big],\\ 
+f_{\text{in}}(x,v) &= \left[\, \Phi_{\text{SH}}(v)\ \Vert\ \psi(x)\ \Vert\ m \,\right],\\ 
 \tilde{c} &= \text{MLP}\big(f_{\text{in}}\big),\qquad 
 c = \sigma(\tilde{c})\in(0,1)^3. 
 \end{aligned} 
-$$
+$$ 
 
 --- 
  
@@ -83,8 +83,8 @@ $$
 Midpoint samples: 
  
 $$ 
-\tilde t_k=\frac{k+\tfrac12}{K},\quad 
-\mathbf{x}_k=\mathbf{s}+\tilde t_k\,\mathbf{w},\quad k=0,\ldots,K-1. 
+\tilde{t}_k=\frac{k+\tfrac12}{K},\quad 
+\mathbf{x}_k=\mathbf{s}+\tilde{t}_k\,\mathbf{w},\quad k=0,\ldots,K-1. 
 $$ 
  
 Per-point features $\mathbf{z}_k=[\,\phi(\mathbf{x}_k),\,\mathbf{u}\,]$ (hash feature + extra attr).  
@@ -116,8 +116,8 @@ Final pixel:
 $$ 
 \mathbf{I}= 
 \begin{cases} 
-\mathbf{C}/S, & S>1\\ 
-\mathbf{C}+(1-S)\,\mathbf{b}, & S\le 1 
+\mathbf{C}/S,& S>1\\ 
+\mathbf{C}+(1-S)\,\mathbf{b},& S\le 1 
 \end{cases} 
 $$ 
  
@@ -134,7 +134,7 @@ The renderer processes $K$ square tiles, each of side length $S$, **in a single 
 Partition the full image plane into tiles $\{\mathcal{B}_t\}_{t=1}^K$, where each tile $t$ is an axis-aligned square *(any integer-rounded padding introduced during preprocessing is marked and excluded from the loss during training)*: 
  
 $$ 
-\mathcal{B}_t=\{\mathbf{p}\in\mathbb{R}^2 \mid \mathbf{o}_t \le \mathbf{p} < \mathbf{o}_t+(S,S)\}, 
+\mathcal{B}_t=\left\{\mathbf{p}\in\mathbb{R}^2 \ \middle|\ \mathbf{o}_t \le \mathbf{p} < \mathbf{o}_t+(S,S)\right\}, 
 $$ 
  
 with elementwise inequalities and an integer tile origin $\mathbf{o}_t\in\mathbb{Z}^2$.  
@@ -148,10 +148,10 @@ $$
 \mathbf{x}_i^{(t)}=\mathbf{x}_i-\mathbf{o}_t . 
 $$ 
  
-A Gaussian $i$ is a **candidate for tile $t$** if its support overlaps the tile: 
+A Gaussian $i$ is a **candidate for tile $t**$ if its support overlaps the tile: 
  
 $$ 
-\mathcal{P}_t=\big\{\, i \ \big|\ \mathrm{dist}(\mathbf{x}_i,\mathcal{B}_t)\le r_i \big\}. 
+\mathcal{P}_t=\left\{\, i \ \middle|\ \mathrm{dist}(\mathbf{x}_i,\mathcal{B}_t)\le r_i \right\}. 
 $$ 
  
 #### 3) Batched launch and memory layout 
@@ -163,8 +163,8 @@ $$
 $$ 
  
 stored contiguously by tile; the base write offset for tile $t$ is $t\cdot(C S S)$. 
- 
+
 --- 
 ## Contact 
  
-Please contact me if you have any questions at: [ygliao@tju.edu.cn](mailto:ygliao@tju.edu.cn) .
+Please contact me if you have any questions at: [ygliao@tju.edu.cn](mailto:ygliao@tju.edu.cn).
