@@ -27,10 +27,9 @@ f_{\text{in}}(x,v) &= \big[\, \Phi_{\text{SH}}(v)\ \Vert\ \psi(x)\ \Vert\ m \,\b
 \tilde{c} &= \text{MLP}\big(f_{\text{in}}\big),\qquad 
 c = \sigma(\tilde{c})\in(0,1)^3. 
 \end{aligned} 
-$$ 
- 
+$$
+
 --- 
- 
  
 ## Transmittance Computation 
  
@@ -117,20 +116,20 @@ Final pixel:
 $$ 
 \mathbf{I}= 
 \begin{cases} 
-\mathbf{C}/S,& S>1\\[4pt] 
-\mathbf{C}+(1-S)\,\mathbf{b},& S\le 1 
+\mathbf{C}/S, & S>1\\ 
+\mathbf{C}+(1-S)\,\mathbf{b}, & S\le 1 
 \end{cases} 
 $$ 
  
 where $\mathbf{b}$ is the background color. 
- 
+
 --- 
  
 ## Multi-Image-Tile Rendering 
  
 The renderer processes $K$ square tiles, each of side length $S$, **in a single batched pass** by stacking tiles along a virtual batch axis. 
  
-### Setup 
+#### 1) Setup 
  
 Partition the full image plane into tiles $\{\mathcal{B}_t\}_{t=1}^K$, where each tile $t$ is an axis-aligned square *(any integer-rounded padding introduced during preprocessing is marked and excluded from the loss during training)*: 
  
@@ -141,7 +140,7 @@ $$
 with elementwise inequalities and an integer tile origin $\mathbf{o}_t\in\mathbb{Z}^2$.  
 Assume each Gaussian $i$ has a **screen-space center** $\mathbf{x}_i$ and a **support radius** $r_i>0$ (e.g., derived upstream from its 2D footprint). 
  
-### Tile-relative shifting 
+#### 2) Tile-relative shifting 
  
 For tile $t$, define tile-relative centers 
  
@@ -152,10 +151,10 @@ $$
 A Gaussian $i$ is a **candidate for tile $t$** if its support overlaps the tile: 
  
 $$ 
-\mathcal{P}_t=\big\{\, i \ \big|\ \mathrm{dist}(\mathbf{x}_i, \mathcal{B}_t)\le r_i \big\}. 
+\mathcal{P}_t=\big\{\, i \ \big|\ \mathrm{dist}(\mathbf{x}_i,\mathcal{B}_t)\le r_i \big\}. 
 $$ 
  
-### Batched launch and memory layout 
+#### 3) Batched launch and memory layout 
  
 A 3D CUDA grid covers per-tile pixels on $(x,y)$ and indexes tiles along the **$z$-axis**. The output tensor is 
  
