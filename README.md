@@ -6,31 +6,30 @@
 * **MLP & HashGridEncoder** are implemented via the Python interface of [**tiny-cuda-nn**](https://github.com/nvlabs/tiny-cuda-nn#pytorch-extension). (If you encounter installation issues with tiny-cuda-nn, you may refer to [this issue](https://github.com/NVlabs/tiny-cuda-nn/issues/195#issuecomment-1316275803) for solutions.) 
  
 > **Status**: early sample / WIP. Generalization is limited (see Performance). Gaussian add/clone, pruning/merging, and LR-decay are not yet included. 
---- 
- 
+---
+
 ## Contents 
  
 * [Color Estimation](#color-estimation) 
 * [Transmittance Computation](#transmittance-computation) 
 * [Multi-Image-Tile Rendering](#multi-image-tile-rendering) 
 
---- 
+---
 ## Color Estimation 
  
 Color is predicted with a compact MLP driven by directional and positional features plus a per-Gaussian material code. 
  
-Let $v\in\mathbb{R}^3$ be the (normalized) view direction. Let $\Phi_{\text{SH}}(v)$ be SH features up to degree $D$ and $\psi(x)$ be the hash-encoded position features. With per-Gaussian material vector $m$, 
+Let $v\in\mathbb{R}^3$ be the (normalized) view direction. Let $\Phi_{\mathrm{SH}}(v)$ be SH features up to degree $D$ and $\psi(x)$ be the hash-encoded position features. With per-Gaussian material vector $m$, 
  
 $$
 \begin{aligned}
-f_{\text{in}}(x,v) &= [\, \Phi_{\text{SH}}(v)\ \Vert\ \psi(x)\ \Vert\ m \,],\\
-\tilde{c} &= \mathrm{MLP}\big(f_{\text{in}}\big),\qquad
+f_{\mathrm{in}}(x,v) &= [\, \Phi_{\mathrm{SH}}(v)\ \Vert\ \psi(x)\ \Vert\ m \,],\\
+\tilde{c} &= \mathrm{MLP}\big(f_{\mathrm{in}}\big),\qquad
 c = \sigma(\tilde{c})\in(0,1)^3.
 \end{aligned}
 $$
 
---- 
- 
+---
 ## Transmittance Computation 
  
 α-sorting is replaced by estimating a **segment transmittance product** along the ray segment clipped to the unit box $\mathcal{B}=[0,1]^3$. 
@@ -43,22 +42,22 @@ For each axis $j\in\{x,y,z\}$ and planes $x_j\in\{0,1\}$,
 $$
 t^{(0)}_j=\frac{0-p_j}{v_j},\quad
 t^{(1)}_j=\frac{1-p_j}{v_j},\quad
-t^{\min}_j=\min\{t^{(0)}_j,t^{(1)}_j\},\quad
-t^{\max}_j=\max\{t^{(0)}_j,t^{(1)}_j\}.
+t^{\min}_j=\min\{\,t^{(0)}_j,\,t^{(1)}_j\,\},\quad
+t^{\max}_j=\max\{\,t^{(0)}_j,\,t^{(1)}_j\,\}.
 $$
  
 Aggregate entrance/exit: 
  
 $$
-t_{\text{enter}}=\max_j\, t^{\min}_j,\qquad
-t_{\text{exit}}=\min_j\, t^{\max}_j.
+t_{\mathrm{enter}}=\max_j\, t^{\min}_j,\qquad
+t_{\mathrm{exit}}=\min_j\, t^{\max}_j.
 $$
  
 Clamp to $[0,1]$: 
  
 $$
-t_0=\mathrm{clip}(t_{\text{enter}},0,1),\quad
-t_1=\mathrm{clip}(t_{\text{exit}},0,1),\quad
+t_0=\mathrm{clip}(t_{\mathrm{enter}},0,1),\quad
+t_1=\mathrm{clip}(t_{\mathrm{exit}},0,1),\quad
 \lambda=\max\{\,t_1-t_0,\,0\,\}.
 $$
  
@@ -67,7 +66,7 @@ If $\lambda>0$, the **clipped segment** is
 $$
 \mathbf{s}=\mathbf{p}+t_0\mathbf{v},\qquad
 \mathbf{w}=\lambda\,\mathbf{v},\qquad
-L=\lVert \mathbf{w}\rVert_2.
+L=\| \mathbf{w} \|_2.
 $$
  
 #### 2) Midpoint sampling and transmittance product 
@@ -78,7 +77,7 @@ Number of subsegments:
 $$
 K=\left\lceil \frac{L}{\sigma}\right\rceil,\quad
 \Delta s=\frac{L}{K},\quad
-s_{\text{factor}}=\frac{\Delta s}{\sigma}.
+s_{\mathrm{factor}}=\frac{\Delta s}{\sigma}.
 $$
  
 Midpoint samples: 
@@ -93,8 +92,8 @@ Scalar network output $a_k=\mathrm{net}(\mathbf{z}_k)$.
 Per-step factor: 
  
 $$
-\rho_k=\big(\sigma_{\text{sig}}(a_k)\big)^{s_{\text{factor}}},\quad
-\sigma_{\text{sig}}(a)=\frac{1}{1+e^{-a}}.
+\rho_k=\big(\sigma_{\mathrm{sig}}(a_k)\big)^{s_{\mathrm{factor}}},\quad
+\sigma_{\mathrm{sig}}(a)=\frac{1}{1+e^{-a}}.
 $$
  
 **Segment transmittance:** 
@@ -124,11 +123,10 @@ $$
  
 where $\mathbf{b}$ is the background color. 
 
---- 
- 
+---
 ## Multi-Image-Tile Rendering 
  
-The renderer processes $K$ square tiles, each of side length $S$, **in a single batched pass** by stacking tiles along a virtual batch axis. 
+The renderer processes $\{\mathcal{B}_t\}_{t=1}^K$ square tiles, each of side length $S$, **in a single batched pass** by stacking tiles along a virtual batch axis. 
  
 #### 1) Setup 
  
@@ -165,7 +163,7 @@ $$
  
 stored contiguously by tile; the base write offset for tile $t$ is $t\cdot(C S S)$. 
 
---- 
+---
 ## Contact 
  
 Please contact me if you have any questions at: [ygliao@tju.edu.cn](mailto:ygliao@tju.edu.cn).
