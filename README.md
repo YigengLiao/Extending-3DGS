@@ -19,12 +19,12 @@
 
 Color is predicted with a compact MLP driven by directional and positional features plus a per-Gaussian material code.
 
-Let $v\in\mathbb{R}^3$ be the (normalized) view direction. Let $\Phi_\text{SH}(v)$ be SH features up to degree $D$ and $\psi(x)$ be the hash-encoded position features. With per-Gaussian material vector \$m\$,
+Let $v\in\mathbb{R}^3$ be the (normalized) view direction. Let $\Phi_{\text{SH}}(v)$ be SH features up to degree $D$ and $\psi(x)$ be the hash-encoded position features. With per-Gaussian material vector $m$,
 
 $$
 \begin{aligned}
-f_\text{in}(x,v) &= \big[\, \Phi_\text{SH}(v)\ \Vert\ \psi(x)\ \Vert\ m \,\big],\\
-\tilde{c} &= \text{MLP}\big(f_\text{in}\big),\qquad
+f_{\text{in}}(x,v) &= \big[\, \Phi_{\text{SH}}(v)\ \Vert\ \psi(x)\ \Vert\ m \,\big],\\
+\tilde{c} &= \text{MLP}\big(f_{\text{in}}\big),\qquad
 c = \sigma(\tilde{c})\in(0,1)^3.
 \end{aligned}
 $$
@@ -34,10 +34,11 @@ $$
 
 ## Transmittance Computation
 
-α-sorting is replaced by estimating a **segment transmittance product** along the ray segment clipped to the unit box $\mathcal B=[0,1]^3$.
+α-sorting is replaced by estimating a **segment transmittance product** along the ray segment clipped to the unit box $\mathcal{B}=[0,1]^3$.
+
 #### 1) Clip a ray segment to the unit cube
 
-Given start point $\mathbf p\in\mathbb R^3$ and direction $\mathbf v\in\mathbb R^3$, consider $\mathbf r(t)=\mathbf p+t\mathbf v$ for $t\in[0,1]$.
+Given start point $\mathbf{p}\in\mathbb{R}^3$ and direction $\mathbf{v}\in\mathbb{R}^3$, consider $\mathbf{r}(t)=\mathbf{p}+t\mathbf{v}$ for $t\in[0,1]$.
 For each axis $j\in\{x,y,z\}$ and planes $x_j\in\{0,1\}$,
 
 $$
@@ -57,16 +58,16 @@ $$
 Clamp to $[0,1]$:
 
 $$
-t_0=\mathrm{clip}(t_{\text{enter}},0,1),\quad
-t_1=\mathrm{clip}(t_{\text{exit}},0,1),\quad
+t_0=\operatorname{clip}(t_{\text{enter}},0,1),\quad
+t_1=\operatorname{clip}(t_{\text{exit}},0,1),\quad
 \lambda=\max\{t_1-t_0,0\}.
 $$
 
 If $\lambda>0$, the **clipped segment** is
 
 $$
-\mathbf s=\mathbf p+t_0\mathbf v,\qquad
-\mathbf w=\lambda\,\mathbf v,\qquad L=\|\mathbf w\|_2.
+\mathbf{s}=\mathbf{p}+t_0\mathbf{v},\qquad
+\mathbf{w}=\lambda\,\mathbf{v},\qquad L=\|\mathbf{w}\|_2.
 $$
 
 #### 2) Midpoint sampling and transmittance product
@@ -77,22 +78,22 @@ Number of subsegments:
 $$
 K=\left\lceil \frac{L}{\sigma}\right\rceil,\quad
 \Delta s=\frac{L}{K},\quad
-\text{s_factor}=\frac{\Delta s}{\sigma}.
+s_{\text{factor}}=\frac{\Delta s}{\sigma}.
 $$
 
 Midpoint samples:
 
 $$
 \tilde t_k=\frac{k+\tfrac12}{K},\quad
-\mathbf x_k=\mathbf s+\tilde t_k\,\mathbf w,\quad k=0,\ldots,K-1.
+\mathbf{x}_k=\mathbf{s}+\tilde t_k\,\mathbf{w},\quad k=0,\ldots,K-1.
 $$
 
-Per-point features $\mathbf z_k=[\,\phi(\mathbf x_k),\,\mathbf u\,]$ (hash feature + extra attr).
-Scalar network output $a_k=\text{net}(\mathbf z_k)$.
+Per-point features $\mathbf{z}_k=[\,\phi(\mathbf{x}_k),\,\mathbf{u}\,]$ (hash feature + extra attr).
+Scalar network output $a_k=\text{net}(\mathbf{z}_k)$.
 Per-step factor:
 
 $$
-\rho_k=\Big(\sigma_{\text{sig}}(a_k)\Big)^{\text{s_factor}},\quad 
+\rho_k=\Big(\sigma_{\text{sig}}(a_k)\Big)^{s_{\text{factor}}},\quad 
 \sigma_{\text{sig}}(a)=\frac{1}{1+e^{-a}}.
 $$
 
@@ -107,7 +108,7 @@ Let per-Gaussian opacity (after our transmittance) be $\alpha_i = \mathrm{opacit
 For a pixel, accumulate
 
 $$
-\mathbf C = \sum_i \alpha_i\,\mathbf c_i,\qquad
+\mathbf{C} = \sum_i \alpha_i\,\mathbf{c}_i,\qquad
 S=\sum_i \alpha_i.
 $$
 
@@ -116,12 +117,12 @@ Final pixel:
 $$
 \mathbf{I}=
 \begin{cases}
-\mathbf C/S,& S>1\\[4pt]
-\mathbf C+(1-S)\,\mathbf{b},& S\le 1
+\mathbf{C}/S,& S>1\\[4pt]
+\mathbf{C}+(1-S)\,\mathbf{b},& S\le 1
 \end{cases}
 $$
 
-where $\mathbf b$ is the background color.
+where $\mathbf{b}$ is the background color.
 
 ---
 
