@@ -100,36 +100,36 @@ class _RasterizeGaussians_preprocess(torch.autograd.Function):
         opacities = torch.sigmoid(opacities)
         scales = torch.exp(scales)
         rotations = torch.nn.functional.normalize(rotations)
-        # 将参数按照 C++ 库的调用约定重新组织
+
         args = (
-            means3D,  # 3D 均值
-            colors_precomp,  # 预计算颜色
-            opacities,  # 不透明度
-            scales,  # 缩放因子
-            rotations,  # 旋转矩阵
-            raster_settings.scale_modifier,  # 缩放修正
-            cov3Ds_precomp,  # 预计算 3D 协方差
-            raster_settings.viewmatrix,  # 视图矩阵
-            raster_settings.projmatrix,  # 投影矩阵
-            raster_settings.tanfovx,  # X 方向 FOV 的切线
-            raster_settings.tanfovy,  # Y 方向 FOV 的切线
-            raster_settings.image_height,  # 图像高度
-            raster_settings.image_width,  # 图像宽度
+            means3D, 
+            colors_precomp,  
+            opacities,  
+            scales, 
+            rotations, 
+            raster_settings.scale_modifier,  
+            cov3Ds_precomp, 
+            raster_settings.viewmatrix,  
+            raster_settings.projmatrix,  
+            raster_settings.tanfovx, 
+            raster_settings.tanfovy, 
+            raster_settings.image_height, 
+            raster_settings.image_width,
             raster_settings.tile_side,
-            sh,  # 球面谐波
-            raster_settings.sh_degree,  # SH 展开度
-            raster_settings.campos,  # 相机位置
-            raster_settings.crop_box,  # 是否开启多图像块渲染训练阶段
-            raster_settings.prefiltered,  # 是否预滤波
-            raster_settings.debug  # 调试标志
+            sh,
+            raster_settings.sh_degree,
+            raster_settings.campos, 
+            raster_settings.crop_box,
+            raster_settings.prefiltered,
+            raster_settings.debug
         )
-        # 调用 C++/CUDA 光栅化函数
+       
         if raster_settings.debug:
-            cpu_args = cpu_deep_copy_tuple(args)  # 在调试模式下先复制参数以防止被破坏
+            cpu_args = cpu_deep_copy_tuple(args)
             try:
                 point_id, point_offsets, v_dir, geomBuffer = _C.rasterize_gaussians_preprocess(*args)
             except Exception as ex:
-                torch.save(cpu_args, "snapshot_fw.dump")  # 保存快照供调试
+                torch.save(cpu_args, "snapshot_fw.dump") 
                 print("\nAn error occured in forward. Please forward snapshot_fw.dump for debugging.")
                 raise ex
         else:
@@ -139,7 +139,7 @@ class _RasterizeGaussians_preprocess(torch.autograd.Function):
         u_gauss_out = u_gauss[point_id]
         material_out = material[point_id]
 
-        # 保存用于反向传播的张量和设置
+  
         ctx.save_for_backward(point_id)
         ctx.u_gauss_shape = u_gauss.shape
         ctx.material_shape = material.shape
@@ -191,28 +191,28 @@ class _RasterizeGaussians_render(torch.autograd.Function):
             pt_count,
             point_offsets,
             geomBuffer,
-            raster_settings.bg,  # 背景色
-            colors_precomp,  # 预计算颜色
+            raster_settings.bg, 
+            colors_precomp, 
             transmission,
-            raster_settings.image_height,  # 图像高度
-            raster_settings.image_width,  # 图像宽度
+            raster_settings.image_height, 
+            raster_settings.image_width, 
             raster_settings.tile_side,
-            raster_settings.debug  # 调试标志
+            raster_settings.debug 
         )
 
-        # 调用 C++/CUDA 光栅化函数
+
         if raster_settings.debug:
-            cpu_args = cpu_deep_copy_tuple(args)  # 在调试模式下先复制参数以防止被破坏
+            cpu_args = cpu_deep_copy_tuple(args)  
             try:
                 num_rendered, color, geomBuffer, binningBuffer, imgBuffer = _C.rasterize_gaussians_render(*args)
             except Exception as ex:
-                torch.save(cpu_args, "snapshot_fw.dump")  # 保存快照供调试
+                torch.save(cpu_args, "snapshot_fw.dump") 
                 print("\nAn error occured in forward. Please forward snapshot_fw.dump for debugging.")
                 raise ex
         else:
             num_rendered, out_color, geomBuffer, binningBuffer, imgBuffer = _C.rasterize_gaussians_render(*args)
 
-        # 保存用于反向传播的张量和设置
+   
         ctx.raster_settings = raster_settings
         ctx.num_rendered = num_rendered
         ctx.save_for_backward(
@@ -232,9 +232,8 @@ class _RasterizeGaussians_render(torch.autograd.Function):
         num_rendered = ctx.num_rendered
         raster_settings = ctx.raster_settings
         colors_precomp, means3D, opacities, transmission, scales, rotations, point_offsets, point_id, cov3Ds_precomp, sh,\
-        geomBuffer, binningBuffer, imgBuffer, out_color = ctx.saved_tensors  # 恢复保存的张量
+        geomBuffer, binningBuffer, imgBuffer, out_color = ctx.saved_tensors 
 
-        # 按照 C++ 接口重新组织参数
         args = (
             point_offsets,
             raster_settings.bg,
@@ -248,10 +247,10 @@ class _RasterizeGaussians_render(torch.autograd.Function):
             raster_settings.projmatrix,
             raster_settings.tanfovx,
             raster_settings.tanfovy,
-            raster_settings.image_height,  # 图像高度
-            raster_settings.image_width,  # 图像宽度
+            raster_settings.image_height, 
+            raster_settings.image_width, 
             raster_settings.tile_side,
-            grad_out_color,  # 上游梯度
+            grad_out_color, 
             sh,
             raster_settings.sh_degree,
             raster_settings.campos,
@@ -262,16 +261,15 @@ class _RasterizeGaussians_render(torch.autograd.Function):
             out_color,
             raster_settings.debug
         )
-
-        # 调用 C++ 反向传播函数计算梯度
+ 
         if raster_settings.debug:
-            cpu_args = cpu_deep_copy_tuple(args)  # 复制参数
+            cpu_args = cpu_deep_copy_tuple(args)  
             try:
                 grad_means2D, grad_colors_precomp, grad_opacities0, grad_means3D0,\
                 grad_cov3Ds_precomp, grad_sh, grad_scales0, grad_rotations0 = \
                     _C.rasterize_gaussians_backward(*args)
             except Exception as ex:
-                torch.save(cpu_args, "snapshot_bw.dump")  # 保存快照
+                torch.save(cpu_args, "snapshot_bw.dump")  
                 print("\nAn error occured in backward. Writing snapshot_bw.dump for debugging.\n")
                 raise ex
         else:
@@ -298,39 +296,38 @@ class _RasterizeGaussians_render(torch.autograd.Function):
             grad_cov3Ds_precomp, grad_sh
 
 class GaussianRasterizationSettings(NamedTuple):
-    image_height: int  # 图像高度
-    image_width: int   # 图像宽度
+    image_height: int 
+    image_width: int  
     tile_side: int
-    tanfovx : List[float]    # X 方向视场角切线值
-    tanfovy : List[float]    # Y 方向视场角切线值
-    bg : torch.Tensor  # 背景颜色张量
-    scale_modifier : float  # 全局缩放修正因子
-    viewmatrix : List[torch.Tensor]  # 视图矩阵张量
-    projmatrix : List[torch.Tensor]  # 投影矩阵张量
-    sh_degree : int    # 球面谐波展开度
-    campos : List[torch.Tensor]  # 相机位置张量
-    crop_box : torch.Tensor  # 图像块坐标
-    prefiltered : bool  # 是否使用预滤波
-    debug : bool        # 调试模式开关
+    tanfovx : List[float]    
+    tanfovy : List[float]    
+    bg : torch.Tensor  
+    scale_modifier : float  
+    viewmatrix : List[torch.Tensor] 
+    projmatrix : List[torch.Tensor] 
+    sh_degree : int   
+    campos : List[torch.Tensor]  
+    crop_box : torch.Tensor  
+    prefiltered : bool  
+    debug : bool        
 
 class GaussianRasterizer(nn.Module):
     def __init__(self, raster_settings):
         super().__init__()
-        self.raster_settings = raster_settings  # 保存光栅化设置
+        self.raster_settings = raster_settings 
 
     def forward(self, means3D, opacities, u_gauss, material, rotations = None,
                 shs = None, colors_precomp = None, scales = None, cov3D_precomp = None):
 
-        raster_settings = self.raster_settings  # 获取设置
-        # 校验参数，SHs 与预计算颜色只能提供其一
+        raster_settings = self.raster_settings 
+
         if (shs is None and colors_precomp is None) or (shs is not None and colors_precomp is not None):
             raise Exception('Please provide excatly one of either SHs or precomputed colors!')
-        # 校验 scale/rotation 与 3D 协方差之一
+  
         if ((scales is None or rotations is None) and cov3D_precomp is None) or \
                 ((scales is not None or rotations is not None) and cov3D_precomp is not None):
             raise Exception('Please provide exactly one of either scale/rotation pair or precomputed 3D covariance!')
 
-        # 为空时初始化为零维张量
         if shs is None:
             shs = torch.Tensor([])
         if colors_precomp is None:
@@ -342,7 +339,6 @@ class GaussianRasterizer(nn.Module):
         if cov3D_precomp is None:
             cov3D_precomp = torch.Tensor([])
 
-        # 调用核心光栅化函数，并返回渲染结果
         return rasterize_gaussians_preprocess(
             means3D,
             shs,
@@ -358,9 +354,8 @@ class GaussianRasterizer(nn.Module):
     def render(self, means3D, point_offsets, geomBuffer, point_id, opacities, transmission, rotations = None,
                 shs = None, colors_precomp = None, scales = None, cov3D_precomp = None):
 
-        raster_settings = self.raster_settings  # 获取设置
+        raster_settings = self.raster_settings 
 
-        # 为空时初始化为零维张量
         if shs is None:
             shs = torch.Tensor([])
         if colors_precomp is None:
@@ -372,7 +367,6 @@ class GaussianRasterizer(nn.Module):
         if cov3D_precomp is None:
             cov3D_precomp = torch.Tensor([])
 
-        # 调用核心光栅化函数，并返回渲染结果
         return rasterize_gaussians_render(
             means3D,
             point_offsets,
